@@ -16,7 +16,10 @@ PROJECT = ensure_project_root()
 
 from ultralytics import YOLO  # noqa: E402
 
-DATA_YAML = os.path.join(PROJECT, "configs", "data.yaml")
+from src.utils import paths  # noqa: E402
+
+# 经 paths 绝对化：ultralytics 解析相对 `path` 时以 cwd 为准，不可依赖
+DATA_YAML = str(paths.runtime_data_yaml())
 
 # (显示名, 权重相对路径, 评估 imgsz)
 # 消融矩阵：

@@ -5,6 +5,8 @@
 - 方法：全部结论均经**实际运行复现**或**命令输出取证**，未复现的推断会显式标注
 - 工具：`ruff`（默认 + 扩展规则集）、`pytest`、`pip check`、`git`、自建只读探测脚本
 - 未做任何修改（纯只读自检）
+- 注：本报告在入库/公开前做了**机器信息脱敏** —— 涉及本机用户目录与父目录名的
+  字面量已替换为 `<用户目录>` / `<项目父目录>`，其余结论与命令输出保持原样。
 
 ---
 
@@ -43,7 +45,7 @@
   （补充：`python-multipart` 是 FastAPI `File(...)` 路由的硬依赖，缺它会直接导致应用启动即报错。）
 
 ### H5. 项目没有任何版本控制
-- **证据（已复现）**：`git rev-parse --show-toplevel` → rc=128 `fatal: not a git repository`；`defect-detection` 与父目录 `机器视觉` 下均无 `.git`。
+- **证据（已复现）**：`git rev-parse --show-toplevel` → rc=128 `fatal: not a git repository`；`defect-detection` 与其父目录下均无 `.git`。
 - **影响**：62 个源文件、多轮消融实验的全部改动无历史可回溯、无 diff 可评审；作为求职项目，「无 git 记录」在评审时是明显减分项。
 - **修复**：`git init` → 先补 `.gitignore`（见 L9）→ 首次提交。注意权重与数据不入库，改用一个 `weights/README.md` 说明权重来源与复现命令。
 
@@ -83,7 +85,7 @@
 ### M6. README 与实现严重不符（对外文档可信度问题）
 | README 位置 | 声称 | 实际（已核实） |
 |---|---|---|
-| `:57` | 「配置与代码分离：所有路径/超参在 configs/，代码不写死」 | **20/21 个 .py 文件**硬编码了 `C:\Users\24830\Desktop\机器视觉\...`；`src/ui/app.py:18-20` 作为**包模块**还执行 `os.chdir`（导入即改变全局 cwd） |
+| `:57` | 「配置与代码分离：所有路径/超参在 configs/，代码不写死」 | **20/21 个 .py 文件**硬编码了 `C:\Users\<用户目录>\Desktop\<项目父目录>\...`；`src/ui/app.py:18-20` 作为**包模块**还执行 `os.chdir`（导入即改变全局 cwd） |
 | `:12` | `data/raw/` 为 `IMAGES/ + ANNOTATIONS/` | 实际 `data/raw/NEU-DET/{train,validation}/{images/<class>,annotations}` |
 | `:14` | `data/samples/` | 不存在，实际产物在 `runs/demo_samples/` |
 | `:41` | 演示入口 `python -m src.ui.app` | 实际入口是 `scripts/demo.py`（两者端口/路径处理还不一致） |
@@ -100,7 +102,7 @@
 
 ### M8. `predictor.predict_path` 在中文本机路径下必然失败
 - **位置**：`src/inference/predictor.py:38` `cv2.imread(path)`
-- **证据（已复现）**：对本项目 test 图（路径含 `机器视觉`）`cv2.imread` 返回 `None`，OpenCV 打印 `can't open/read file`；而 `np.fromfile + cv2.imdecode` 正常。
+- **证据（已复现）**：对本项目 test 图（路径含中文目录）`cv2.imread` 返回 `None`，OpenCV 打印 `can't open/read file`；而 `np.fromfile + cv2.imdecode` 正常。
 - **修复**：统一改走 `np.fromfile + cv2.imdecode`（本条与 L4 的重复实现合并处理）。
 
 ### M9. Dockerfile 构建出的镜像跑不起来（多因叠加）

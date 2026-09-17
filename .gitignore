@@ -2,6 +2,8 @@
 data/raw/
 data/processed/
 data/samples/*.jpg
+# 运行时生成的 data.yaml 副本（path 已绝对化，见 utils.paths.runtime_data_yaml）
+configs/data.local.yaml
 
 # ---------- 权重与训练产物 ----------
 weights/*.pt

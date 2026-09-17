@@ -19,7 +19,10 @@ PROJECT = ensure_project_root()
 
 from ultralytics import YOLO  # noqa: E402
 
-DATA_YAML = os.path.join(PROJECT, "configs", "data.yaml")
+from src.utils import paths  # noqa: E402
+
+# 经 paths 绝对化：ultralytics 解析相对 `path` 时以 cwd 为准，不可依赖
+DATA_YAML = str(paths.runtime_data_yaml())
 WEIGHT = os.path.join(PROJECT, "runs", "detect", "runs", "exp_aug640", "weights", "best.pt")
 OUT_DIR = os.path.join(PROJECT, "runs", "threshold_tuning")
 

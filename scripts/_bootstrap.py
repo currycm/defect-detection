@@ -15,7 +15,10 @@
 避免「解析到了错误的目录却不报错」这种最难查的情况）：
     1. 环境变量 DEFECT_PROJECT_ROOT     —— 迁移机器时只需设这个
     2. 由本文件位置推导（scripts/ 的上一级）
-    3. 本机已知绝对路径                 —— 最后的兜底
+
+注意这里**不内置任何本机绝对路径**作为兜底：一旦写进去就会随代码公开
+（泄露用户名/目录结构），换机后也只会把错误隐藏得更深。候选都不匹配时
+直接抛 SystemExit 并提示设置 DEFECT_PROJECT_ROOT。
 
 用法
 ----
@@ -32,9 +35,6 @@ from pathlib import Path
 
 ENV_VAR = "DEFECT_PROJECT_ROOT"
 _MARKER = Path("configs") / "data.yaml"
-_KNOWN_ROOTS: tuple[Path, ...] = (
-    Path(r"C:\Users\24830\Desktop\机器视觉\defect-detection"),
-)
 
 _cached: Path | None = None
 
@@ -48,7 +48,6 @@ def _candidates():
         yield Path(__file__).resolve().parent.parent
     except OSError:  # pragma: no cover - 防御 __file__ 异常
         pass
-    yield from _KNOWN_ROOTS
 
 
 def ensure_project_root(chdir: bool = True) -> Path:

@@ -9,24 +9,34 @@ from pathlib import Path
 
 from ultralytics import YOLO
 
+from ..utils import paths
+
 
 def evaluate(
     weights: str | Path,
-    data_yaml: str | Path = "configs/data.yaml",
+    data_yaml: str | Path | None = None,
     split: str = "test",
     imgsz: int = 640,
     conf: float = 0.001,
     iou: float = 0.6,
+    workers: int = 0,
     verbose: bool = False,
 ) -> dict:
     """在 `split` 指定的划分上评估权重，返回整体与逐类指标。
 
     参数
         weights   : .pt / .onnx 权重路径
-        data_yaml : 数据集配置（需含 train/val/test 三路）
+        data_yaml : 数据集配置（需含 train/val/test 三路）；默认取
+                    `paths.DATA_YAML`，并统一经 `runtime_data_yaml()` 绝对化，
+                    避免 ultralytics 按 cwd 解析相对 `path` 而误退到全局数据集目录。
         split     : "train" | "val" | "test"，默认 test（独立 held-out 集）
         conf/iou  : 验证时的置信度 / NMS 阈值；conf 默认取极低值 0.001，
                     因为 mAP 是「全召回扫描」指标，阈值调高只会让 AP 虚高。
+        workers   : dataloader 进程数，默认 0（单进程）。Windows 下 ultralytics
+                    会用 spawn 起 worker，而 spawn 会**重新 import 主模块**：
+                    若调用方脚本没有 `if __name__ == "__main__":` 守卫，子进程会
+                    把整段脚本再跑一遍并继续分裂，表现为「进程树失控、CPU 不涨」。
+                    默认 0 从根上避开这类问题（本机内存 15.6GB 也不适合多 worker）。
 
     返回
         {
@@ -37,11 +47,12 @@ def evaluate(
     """
     model = YOLO(str(weights))
     metrics = model.val(
-        data=str(data_yaml),
+        data=str(paths.runtime_data_yaml(data_yaml)),
         split=split,
         imgsz=imgsz,
         conf=conf,
         iou=iou,
+        workers=workers,
         verbose=verbose,
     )
     box = metrics.box

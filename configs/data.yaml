@@ -1,7 +1,11 @@
 # 数据集配置（YOLOv8 读取）
-# 注：本机项目在中文目录“机器视觉”下，相对 path 经 shell/cwd 传递会乱码，
-# 故此处用绝对路径（yaml 内容以 UTF-8 写入，无乱码）。迁移机器时改回相对 path 即可。
-path: C:/Users/24830/Desktop/机器视觉/defect-detection/data/processed
+#
+# 这里刻意使用**相对路径**，好让配置能安全入库、换机不改文件。
+# `path` 相对项目根解析；真正交给 ultralytics 时由
+# `src/utils/paths.py::runtime_data_yaml()` 生成一份 `path` 已绝对化的副本
+# （configs/data.local.yaml，不入库）——因为 ultralytics 判断相对 `path` 是否存在
+# 是按 **cwd** 来的，cwd 不对就会静默退到全局 DATASETS_DIR。
+path: data/processed
 train: images/train
 val: images/val
 test: images/test

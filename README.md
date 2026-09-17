@@ -25,7 +25,7 @@ FastAPI 服务 (src/inference/api.py)  +  MJPEG 实时推流 (src/inference/stre
 
 ```
 defect-detection/
-├── configs/            data.yaml（数据集）+ hyp.yaml（超参）
+├── configs/            data.yaml（数据集，相对路径）+ hyp.yaml（超参）
 ├── data/
 │   ├── raw/            原始 NEU-DET（不入库）
 │   └── processed/      YOLO 格式 images/labels/{train,val,test}（不入库）
@@ -35,7 +35,7 @@ defect-detection/
 │   ├── evaluation/     metrics（整体+逐类评估）/ error_analysis（难例分析）
 │   ├── inference/      api（HTTP）/ stream（流式）/ predictor(Torch) / onnx_predictor / schemas
 │   ├── models/         wrapper
-│   ├── training/       train / callbacks
+│   ├── training/       train
 │   ├── ui/             Gradio 演示界面
 │   └── utils/          paths（路径唯一真源）/ imageio（中文路径安全读写+画框）/ io / logger
 ├── scripts/            CLI 入口（薄壳，共用 scripts/_bootstrap.py 定位项目根）
@@ -86,9 +86,15 @@ python scripts/demo.py                    # http://127.0.0.1:7860
 ```
 
 > **路径说明**：项目位于中文目录，路径统一由 `src/utils/paths.py` 解析
-> （环境变量 `DEFECT_PROJECT_ROOT` > 由文件位置推导 > 本机已知路径，
-> 每个候选都会校验是否真的含 `configs/data.yaml`）。
+> （环境变量 `DEFECT_PROJECT_ROOT` > 由文件位置推导；
+> 每个候选都会校验是否真的含 `configs/data.yaml`，全不匹配时**直接报错**，
+> 代码里不内置任何本机绝对路径兜底）。
 > 迁移到别的机器时只需设 `DEFECT_PROJECT_ROOT`。
+>
+> **数据集配置**：`configs/data.yaml` 入库版刻意用**相对路径**（`path: data/processed`），
+> 换机不改文件。真正喂给 ultralytics 的那份由 `paths.runtime_data_yaml()` 生成到
+> `configs/data.local.yaml`（不入库），其中 `path` 已被绝对化 —— 因为 ultralytics 判断
+> 相对 `path` 是否存在是**按 cwd** 来的，cwd 不对就会静默退到全局 `DATASETS_DIR`。
 
 ## 推理服务接口
 
@@ -146,6 +152,8 @@ PyTorch 两条链路结果一致（`python scripts/verify_onnx.py` 校验）：
 
 - **路径唯一真源**：`src/utils/paths.py`。代码中不写死绝对路径。当前工作目录只由
   `scripts/_bootstrap.py` 在 CLI 入口处设置一次，库代码不 `chdir`。
+- **dataset yaml 唯一出口**：任何要把数据集配置交给 ultralytics 的地方都必须走
+  `paths.runtime_data_yaml()`（它负责把 `path` 绝对化），不要在调用点手拼路径。
 - **类别表唯一真源**：`src/constants.py`（顺序即 class_id，写错会静默错标）。
 - **图像读写唯一实现**：`src/utils/imageio.py`。
   Windows 中文路径下 `cv2.imread` / `cv2.imwrite` / `np.tofile` 会**静默失败**，

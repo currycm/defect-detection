@@ -13,10 +13,11 @@
 from __future__ import annotations
 
 import argparse
-import os
-import sys
+from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from _bootstrap import ensure_project_root
+
+PROJECT = ensure_project_root()
 
 from src.evaluation.metrics import evaluate, format_report  # noqa: E402
 from src.utils import paths  # noqa: E402
@@ -33,9 +34,12 @@ def main() -> int:
     ap.add_argument("--imgsz", type=int, default=640)
     ap.add_argument("--conf", type=float, default=0.001)
     ap.add_argument("--iou", type=float, default=0.6)
+    ap.add_argument("--workers", type=int, default=0,
+                    help="dataloader 进程数（默认 0=单进程；Windows 下多进程 spawn "
+                         "会重跑主模块，必须靠 __main__ 守卫兜住）")
     args = ap.parse_args()
 
-    if not os.path.exists(args.weights):
+    if not Path(args.weights).exists():
         raise SystemExit(
             f"未找到权重: {args.weights}\n"
             f"提示：训练产物通常在 runs/detect/runs/<exp>/weights/best.pt，"
@@ -44,7 +48,7 @@ def main() -> int:
 
     res = evaluate(
         args.weights, data_yaml=args.data, split=args.split,
-        imgsz=args.imgsz, conf=args.conf, iou=args.iou,
+        imgsz=args.imgsz, conf=args.conf, iou=args.iou, workers=args.workers,
     )
     print(format_report(res))
     return 0

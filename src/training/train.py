@@ -35,8 +35,9 @@ def train(data_yaml: str | os.PathLike | None = None,
 
     路径参数默认取 src.utils.paths 的唯一真源（绝对路径），避免「相对路径在
     cwd 异常时被解析到别处」——历史上就发生过 ultralytics 退回默认数据集目录。
+    数据集配置统一经 `paths.runtime_data_yaml()` 绝对化后再交给 ultralytics。
     """
-    data_yaml = str(data_yaml or paths.DATA_YAML)
+    data_yaml = str(paths.runtime_data_yaml(data_yaml))
     hyp_yaml = str(hyp_yaml or paths.HYP_YAML)
     model = str(model or paths.PRETRAINED_PT)
     project = str(project or paths.RUNS_DIR)

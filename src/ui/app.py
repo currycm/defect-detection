@@ -29,9 +29,9 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # 引导：让「以脚本方式运行」也能 import src.*
 # 仅此处保留一份最小候选链（与 src/utils/paths.py 同策略）：
-# 环境变量 -> 本文件位置推导 -> 本机已知路径，**每个候选都必须含
-# configs/data.yaml 才被采纳**。之所以不复用 paths.py，是因为该模块本身
-# 还需要先有 sys.path 才能导入（先有鸡还是先有蛋）。
+# 环境变量 -> 本文件位置推导，**每个候选都必须含 configs/data.yaml 才被采纳**。
+# 之所以不复用 paths.py，是因为该模块本身还需要先有 sys.path 才能导入
+# （先有鸡还是先有蛋）。这里**不写任何本机绝对路径**，否则会随代码一起公开。
 # ---------------------------------------------------------------------------
 def _ensure_project_root_on_path() -> None:
     marker = Path("configs") / "data.yaml"
@@ -43,7 +43,6 @@ def _ensure_project_root_on_path() -> None:
         candidates.append(Path(__file__).resolve().parents[2])
     except OSError:
         pass
-    candidates.append(Path(r"C:\Users\24830\Desktop\机器视觉\defect-detection"))
 
     for cand in candidates:
         try:
