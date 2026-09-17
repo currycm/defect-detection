@@ -1,0 +1,44 @@
+# ---------- 数据（体积大，不入库；用 scripts/prepare_data.py 重新生成）----------
+data/raw/
+data/processed/
+data/samples/*.jpg
+
+# ---------- 权重与训练产物 ----------
+weights/*.pt
+weights/*.onnx
+weights/*.engine
+weights/*.xml
+runs/
+logs/
+catboost_info/
+*.log
+
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# ---------- 工具缓存 ----------
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---------- 编辑器 / 系统 ----------
+.idea/
+.vscode/
+.ipynb_checkpoints/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

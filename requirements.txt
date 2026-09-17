@@ -1,0 +1,34 @@
+# ============================================================
+# 训练 + 评估 + 服务 + 演示 全量依赖（开发机用）
+# 只跑推理服务（部署）请用 requirements-api.txt，无需 torch。
+# ============================================================
+
+# --- 深度学习 / 训练 ---
+torch>=2.1.0
+torchvision>=0.16.0
+ultralytics>=8.3.0
+
+# --- 数据与图像 ---
+opencv-python>=4.8.0
+albumentations>=1.3.0
+numpy>=1.24.0
+pyyaml>=6.0
+pillow>=10.0.0
+
+# --- 推理服务 ---
+onnxruntime>=1.16.0          # ONNXDefectPredictor 依赖（原先漏声明）
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+python-multipart>=0.0.9      # FastAPI UploadFile/Form 解析（原先漏声明）
+
+# --- 演示界面 ---
+gradio>=4.0.0
+
+# --- 训练可视化 ---
+tensorboard>=2.15.0
+
+# --- 测试 ---
+pytest>=8.0.0
+httpx>=0.27.0                # fastapi.testclient.TestClient 依赖（原先漏声明）
+pytest-cov>=4.1.0

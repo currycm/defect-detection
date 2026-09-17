@@ -1,0 +1,16 @@
+# 数据集配置（YOLOv8 读取）
+# 注：本机项目在中文目录“机器视觉”下，相对 path 经 shell/cwd 传递会乱码，
+# 故此处用绝对路径（yaml 内容以 UTF-8 写入，无乱码）。迁移机器时改回相对 path 即可。
+path: C:/Users/24830/Desktop/机器视觉/defect-detection/data/processed
+train: images/train
+val: images/val
+test: images/test
+
+nc: 6
+names:
+  - crazing
+  - inclusion
+  - patches
+  - pitted_surface
+  - rolled-in_scale
+  - scratches

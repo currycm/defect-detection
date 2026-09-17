@@ -1,0 +1,30 @@
+# docker build 时不要把大文件塞进构建上下文
+# （即使 .gitignore 忽略了，docker 仍会读它们，导致上下文几百 MB 甚至 GB）
+
+.git
+.gitignore
+.ruff_cache
+.pytest_cache
+__pycache__
+*.pyc
+
+# 原始/处理后数据：镜像里不需要，训练也应在宿主机做
+data/raw
+data/processed
+
+# 训练产物：镜像只需 weights/best.onnx（ONNXRuntime 推理）
+runs
+logs
+weights/*.pt
+weights/*.engine
+
+# 文档与测试不需要进运行镜像
+docs
+tests
+scripts
+*.md
+
+# 本地环境
+.venv
+venv
+.env
