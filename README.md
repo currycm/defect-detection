@@ -58,6 +58,12 @@ defect-detection/
 conda create -n defect python=3.11 && conda activate defect
 pip install -r requirements.txt
 
+# 0. 预训练初始权重 yolov8n.pt（6.2MB，同样不入库）
+#    scripts/train.py 的 --weights 默认值是 <项目根>/yolov8n.pt。
+#    缺它时 ultralytics 会去 GitHub 下载，而国内网络常失败（SSL 吊销检查超时），
+#    建议先手动放到项目根目录：
+#      curl -L -o yolov8n.pt https://hf-mirror.com/ultralytics/yolov8n/resolve/main/yolov8n.pt
+
 # 1. 数据准备：先把 NEU-DET 解压到 data/raw/NEU-DET/，再执行
 python scripts/prepare_data.py            # 转换 + 切分 train/val/test
 python scripts/augment.py                 # 可选：弱类定向离线增强

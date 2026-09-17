@@ -8,6 +8,11 @@ weights/*.pt
 weights/*.onnx
 weights/*.engine
 weights/*.xml
+# 根目录的预训练初始权重（6.2MB；scripts/train.py 的 --weights 默认值）
+# 新机器请按 README「快速开始」用镜像下载，不要入库
+/yolov8n.pt
+# 下载中断残留（0 字节）
+*.partial
 runs/
 logs/
 catboost_info/
