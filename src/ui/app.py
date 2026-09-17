@@ -214,6 +214,13 @@ def build_ui() -> gr.Blocks:
         with gr.Row():
             with gr.Column(scale=1):
                 inp = gr.Image(label="上传图片", type="numpy", height=320)
+                gr.Markdown(
+                    "上传区自带的**摄像头按钮**走的是浏览器 `getUserMedia`，需要网页摄像头授权："
+                    "请在独立浏览器（Edge/Chrome）里打开本页并在弹窗点「允许」；"
+                    "若页面嵌在应用内预览中，通常拿不到该权限，点了会没有反应。\n\n"
+                    "**要在预览里也能用摄像头**，请用推理服务页的「摄像头」按钮 "
+                    "http://127.0.0.1:8000/ —— 它由服务端 OpenCV 直接取流，不需要任何浏览器授权。"
+                )
                 conf = gr.Slider(0.01, 0.9, value=0.25, step=0.01,
                                  label="置信度阈值 conf（越高越保守：框更少更准）")
                 iou = gr.Slider(0.1, 0.9, value=0.5, step=0.05,

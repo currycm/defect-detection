@@ -144,21 +144,46 @@ INDEX_HTML = """<!doctype html>
  .bar{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
  button{border:1px solid #d0d3d8;background:#fff;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px}
  button:hover{background:#f0f1f3}
+ .hint{color:#888;font-size:12px;width:100%}
+ .err{color:#c0392b}
 </style></head><body><div class="wrap">
 <h1>钢材表面缺陷 · 实时检测</h1>
 <p class="sub">6 类：crazing / inclusion / patches / pitted_surface / rolled-in_scale / scratches　·　MJPEG 流，浏览器直接显示</p>
 <div class="card">
-  <img id="v" alt="点击“开始”加载实时流">
+  <img id="v" alt="点击“模拟流”或“摄像头”加载实时流" onerror="failed()">
   <div class="bar">
-    <button onclick="start()">开始</button>
+    <button onclick="start('')">模拟流</button>
+    <button onclick="start('0')">摄像头</button>
     <button onclick="pause()">停止</button>
-    <span style="color:#888;font-size:12px">未接摄像头时默认播放 test 集模拟流</span>
+    <span class="hint" id="st">“模拟流”= test 集循环。“摄像头”由服务端经 OpenCV 直接读取本机摄像头，不需要浏览器授权（所以嵌在应用内预览里也能用）。</span>
   </div>
 </div>
 </div>
 <script>
- function start(){ document.getElementById('v').src = '/stream?target_fps=15&detect_interval=0.1&t=' + Date.now(); }
- async function pause(){ await fetch('/stream/stop',{method:'POST'}); document.getElementById('v').src=''; }
+ var cur = '';
+ function set(msg, err){
+   var el = document.getElementById('st');
+   el.textContent = msg;
+   el.className = err ? 'hint err' : 'hint';
+ }
+ function start(source){
+   cur = source;
+   var q = '/stream?target_fps=15&detect_interval=0.1&t=' + Date.now();
+   if (source) q += '&source=' + encodeURIComponent(source);
+   set('已连接：' + (source ? '摄像头 ' + source : '模拟流（test 集）') + '　—　点“停止”释放。');
+   document.getElementById('v').src = q;
+ }
+ async function pause(){
+   cur = '';
+   await fetch('/stream/stop', {method:'POST'});
+   document.getElementById('v').src = '';
+   set('已停止，资源已释放。');
+ }
+ function failed(){
+   if (!cur) return;            // 主动停止时 img 也会触发 error，不该报错
+   set('加载失败：摄像头可能被其它程序占用（例如网页版摄像头已授权），可先试“模拟流”。', true);
+   cur = '';
+ }
 </script></body></html>"""
 
 
