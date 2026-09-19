@@ -1,0 +1,72 @@
+# ruff 配置 —— 固定规则集，避免"基线随 ruff 版本漂移"。
+#
+# 为什么需要这个文件：
+#   此前项目没有 ruff 配置，用的是 ruff 的内置默认规则集。结果是同一份代码
+#   在不同 ruff 版本下报错数会变（实测出现过 93 个报错里有 62 个是 RUF100
+#   「无用 noqa」——不是代码坏了，是规则集变了导致既有 noqa 失去意义）。
+#   把规则集显式写死，基线才是稳定的、可对比的。
+#
+# 运行：
+#   ruff check src scripts tests
+#   ruff check src scripts tests --fix
+
+target-version = "py310"
+line-length = 100
+
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    "runs",
+    "data",
+    "weights",
+]
+
+[lint]
+# 规则集：默认 E4/E7/E9/F + 以下显式启用项。
+# 覆盖本项目实际用到的检查维度：导入、命名、简化、异常处理、现代语法。
+select = [
+    "E",     # pycodestyle 错误
+    "W",     # pycodestyle 警告
+    "F",     # pyflakes（未使用导入/变量等）
+    "I",     # isort（导入排序）
+    "UP",    # pyupgrade（现代语法）
+    "B",     # flake8-bugbear（常见 bug 模式）
+    "SIM",   # flake8-simplify
+    "RUF",   # ruff 自有规则
+]
+
+# 有意放行的规则 —— 每条都有理由，不是"为了归零而忽略"。
+ignore = [
+    # scripts/*.py 必须先调 _bootstrap.ensure_project_root() 定位项目根并 chdir，
+    # 之后才能 import src.*。因此模块级导入天然不在文件顶部，E402 必然触发。
+    # 这是本项目的既定架构（见 scripts/_bootstrap.py 与 README「工程约定」），
+    # 代码里也已逐处标注 `# noqa: E402` 说明意图；此处放行避免重复报错。
+    "E402",
+
+    # 中文注释与文档字符串必然包含全角标点（，。：；「」），
+    # RUF001/002/003 会把它们全部标为"易混淆字符"，属纯噪音。
+    "RUF001",
+    "RUF002",
+    "RUF003",
+
+    # 100 列对含中文的注释偏紧，且 RUF 会有不同的宽度算法。
+    "E501",
+]
+
+[lint.per-file-ignores]
+# 测试里允许 assert 与通配式用法；测试失败信息优先于风格。
+"tests/*" = ["S101", "B011"]
+# 端到端脚本（需先启动服务）不是单测，允许 print 调试输出。
+"scripts/test_*.py" = ["T201"]
+
+# 这两个文件里的 try/except/pass 位于 **generator** 中，且 yield 在 try 块内。
+# 换成 contextlib.suppress 会改变生成器的求值时机语义，收益不足以承担风险，
+# 因此刻意保留原写法。用配置放行，避免在代码里堆 noqa 噪音。
+"src/utils/paths.py" = ["SIM105"]
+"scripts/_bootstrap.py" = ["SIM105"]
+
+# FastAPI 依赖注入的标准写法就是 `x: T = File(...)` / `= Query(...)`，
+# B008 在此属误报：改成"函数体内再调用"会直接破坏接口签名与 OpenAPI 文档。
+"src/inference/api.py" = ["B008"]
