@@ -1,7 +1,7 @@
 """convert 模块单元测试（Pascal VOC XML 解析）。"""
 from pathlib import Path
 
-from src.data.convert import NEU_CLASSES, convert_one, _parse_voc
+from src.data.convert import NEU_CLASSES, _parse_voc, convert_one
 
 
 def _make_xml(tmp_path: Path, w: int = 200, h: int = 200) -> Path:

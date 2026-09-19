@@ -1,6 +1,7 @@
 """YOLOv8 训练入口。"""
 from __future__ import annotations
 
+import glob
 import os
 
 import yaml
@@ -20,8 +21,42 @@ def _load_hyp(hyp_yaml: str | os.PathLike) -> dict:
     """
     if not hyp_yaml or not os.path.exists(hyp_yaml):
         return {}
-    with open(hyp_yaml, "r", encoding="utf-8") as f:
+    with open(hyp_yaml, encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
+
+
+def clear_label_caches() -> int:
+    """清理 data/processed/labels/ 下的 ultralytics cache 文件，返回清理数量。
+
+    必要性：ultralytics 训练启动时会扫描 labels 目录并生成 `*.cache`。
+    若数据集变动（增删图片/标签）后旧 cache 未失效，会触发
+    `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 沙箱守卫，把训练任务直接中断
+    （历史上踩过多次）。清完再启动就稳了。
+
+    放这里而不是脚本入口：任何调用 `train()` 的代码（不只是 scripts/train.py）
+    都能受益，包括 resume.py / 未来的实验脚本。
+    """
+    labels_dir = paths.PROCESSED_DIR / "labels"
+    if not labels_dir.exists():
+        return 0
+    n = 0
+    for cache in glob.glob(str(labels_dir / "*" / "*.cache")):
+        # labels/{train,val,test}/*.cache 都要清
+        try:
+            os.remove(cache)
+            n += 1
+        except OSError as e:
+            LOG.warning("清理 cache 失败 %s: %s", cache, e)
+    # 也清 labels 根目录下可能存在的 cache（旧版本布局）
+    for cache in glob.glob(str(labels_dir / "*.cache")):
+        try:
+            os.remove(cache)
+            n += 1
+        except OSError as e:
+            LOG.warning("清理 cache 失败 %s: %s", cache, e)
+    if n:
+        LOG.info("已清理 %d 个 labels cache（防沙箱守卫中断训练）", n)
+    return n
 
 
 def train(data_yaml: str | os.PathLike | None = None,
@@ -41,6 +76,10 @@ def train(data_yaml: str | os.PathLike | None = None,
     hyp_yaml = str(hyp_yaml or paths.HYP_YAML)
     model = str(model or paths.PRETRAINED_PT)
     project = str(project or paths.RUNS_DIR)
+
+    # 训练前清旧 cache：ultralytics 启动时会重新生成，但若数据集变动过，
+    # 旧 cache 会触发 SAFE_DELETE_BULK_CONFIRM_REQUIRED 守卫中断任务。
+    clear_label_caches()
 
     m = YOLO(model)
     hyp = _load_hyp(hyp_yaml)

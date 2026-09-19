@@ -43,6 +43,8 @@ def _candidates():
     env = os.environ.get(ENV_VAR)
     if env:
         yield Path(env).expanduser()
+    # 与 utils.paths._candidates 同理：生成器内的 yield 不宜改写成
+    # contextlib.suppress，故显式保留 try/except 并用 noqa 说明。
     try:
         # scripts/_bootstrap.py -> scripts/ -> 项目根
         yield Path(__file__).resolve().parent.parent

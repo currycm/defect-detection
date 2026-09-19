@@ -14,12 +14,12 @@ pytest.importorskip("fastapi", reason="需要 fastapi")
 pytest.importorskip("cv2", reason="需要 opencv")
 pytest.importorskip("httpx", reason="TestClient 需要 httpx")
 
-from fastapi import HTTPException  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
-from src.constants import CLASS_NAMES  # noqa: E402
-from src.inference import api as api_mod  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.constants import CLASS_NAMES
+from src.inference import api as api_mod
+from src.utils import paths
 
 pytestmark = pytest.mark.skipif(
     not paths.ONNX_PATH.exists(), reason="需要 weights/best.onnx（先跑 scripts/export.py）"
@@ -89,8 +89,18 @@ def test_detect_returns_contract_compliant_payload(client):
 
 
 def test_detect_rejects_non_image(client):
+    # MIME 不在白名单 -> 415（非法 MIME 是一层防御；真正的「图片但解码失败」才是 400）
     r = client.post("/detect", files={"file": ("x.txt", b"not an image", "text/plain")})
-    assert r.status_code == 400
+    assert r.status_code == 415
+
+
+def test_detect_rejects_oversized_upload(client):
+    """P1-6 回归：超过 MAX_UPLOAD_BYTES 的文件应在 Content-Length 阶段就被拒。"""
+    from src.inference import api
+    big = b"\x00" * (api.MAX_UPLOAD_BYTES + 1)
+    r = client.post("/detect",
+                    files={"file": ("big.jpg", big, "image/jpeg")})
+    assert r.status_code == 413
 
 
 def test_stream_rejects_out_of_range_params(client):

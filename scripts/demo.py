@@ -12,7 +12,7 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.ui.app import build_ui  # noqa: E402
+from src.ui.app import build_ui
 
 
 def main() -> int:

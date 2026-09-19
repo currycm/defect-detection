@@ -21,11 +21,12 @@
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import threading
 import time
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
-from typing import Callable, Iterable, Sequence
 
 import numpy as np
 
@@ -347,7 +348,7 @@ class StreamDetector:
             if self._source is not None:
                 self._source.release()
 
-    def start(self) -> "StreamDetector":
+    def start(self) -> StreamDetector:
         """启动。幂等：已在运行则直接返回。"""
         if self._thread is not None and self._thread.is_alive():
             return self
@@ -384,12 +385,12 @@ class StreamDetector:
         th = self._thread
         if th is not None and th.is_alive():
             th.join(timeout=timeout)
-        # 兜底：线程若卡在阻塞 read 上，显式释放帧源促使 read 返回
+        # 兜底：线程若卡在阻塞 read 上，显式释放帧源促使 read 返回。
+        # 这里必须吞掉异常：stop() 是幂等清理路径，释放失败不应掩盖
+        # 「线程已停」这一事实，也不应让调用方的 finally 再抛一次。
         if self._source is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._source.release()
-            except Exception:
-                pass
         self._thread = None
         self._source = None
 
@@ -412,7 +413,7 @@ class StreamDetector:
         }
 
     # ---------------- 上下文管理 ----------------
-    def __enter__(self) -> "StreamDetector":
+    def __enter__(self) -> StreamDetector:
         return self.start()
 
     def __exit__(self, exc_type, exc, tb) -> None:

@@ -12,10 +12,10 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.constants import CLASS_NAMES  # noqa: E402
-from src.data.convert import convert_all  # noqa: E402
-from src.data.split import split  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.constants import CLASS_NAMES
+from src.data.convert import convert_all
+from src.data.split import split
+from src.utils import paths
 
 
 def main() -> int:

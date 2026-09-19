@@ -22,9 +22,11 @@
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import sys
 from pathlib import Path
+
 
 # ---------------------------------------------------------------------------
 # 引导：让「以脚本方式运行」也能 import src.*
@@ -39,10 +41,8 @@ def _ensure_project_root_on_path() -> None:
     env = os.environ.get("DEFECT_PROJECT_ROOT")
     if env:
         candidates.append(Path(env).expanduser())
-    try:
+    with contextlib.suppress(OSError):
         candidates.append(Path(__file__).resolve().parents[2])
-    except OSError:
-        pass
 
     for cand in candidates:
         try:
@@ -58,14 +58,14 @@ def _ensure_project_root_on_path() -> None:
 
 _ensure_project_root_on_path()
 
-import cv2  # noqa: E402
-import gradio as gr  # noqa: E402
-import numpy as np  # noqa: E402
+import cv2
+import gradio as gr
+import numpy as np
 
-from src.constants import CLASS_NAMES, CLASS_NAMES_ZH  # noqa: E402
-from src.inference.onnx_predictor import ONNXDefectPredictor  # noqa: E402
-from src.utils.imageio import CLASS_COLORS, load_image  # noqa: E402
-from src.utils.paths import ONNX_PATH, PROCESSED_DIR  # noqa: E402
+from src.constants import CLASS_NAMES, CLASS_NAMES_ZH
+from src.inference.onnx_predictor import ONNXDefectPredictor
+from src.utils.imageio import CLASS_COLORS, load_image
+from src.utils.paths import ONNX_PATH, PROCESSED_DIR
 
 CLASS_DESC = CLASS_NAMES_ZH
 TEST_DIR = PROCESSED_DIR / "images" / "test"

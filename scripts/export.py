@@ -16,8 +16,11 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.models.wrapper import export_onnx, load_model  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.models.wrapper import export_onnx, load_model
+from src.utils import paths
+from src.utils.logger import get_logger
+
+LOG = get_logger("export")
 
 
 def main() -> int:
@@ -39,8 +42,8 @@ def main() -> int:
     model = load_model(args.weights)
     out = export_onnx(model, args.out, imgsz=args.imgsz,
                       dynamic=False, simplify=False)
-    print(f"已放置到: {out}")
-    print(f"文件大小: {Path(out).stat().st_size / 1024 / 1024:.1f} MB")
+    LOG.info("ONNX 已导出: %s", out)
+    LOG.info("文件大小: %.1f MB", Path(out).stat().st_size / 1024 / 1024)
     return 0
 
 

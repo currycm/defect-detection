@@ -17,6 +17,7 @@ pillow>=10.0.0
 
 # --- 推理服务 ---
 onnxruntime>=1.16.0          # ONNXDefectPredictor 依赖（原先漏声明）
+onnx>=1.22.0                  # scripts/export.py 导出 ONNX 模型时依赖（原先漏声明）
 fastapi>=0.110.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.5.0

@@ -13,7 +13,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from ultralytics import YOLO
 
 
-def load_model(weights: str | Path) -> "YOLO":
+def load_model(weights: str | Path) -> YOLO:
     """加载 YOLO 模型（预训练权重或训练产出权重）。"""
     from ultralytics import YOLO
 

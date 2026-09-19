@@ -18,7 +18,7 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-import uvicorn  # noqa: E402
+import uvicorn
 
 
 def main() -> int:

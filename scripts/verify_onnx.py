@@ -9,13 +9,13 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-import cv2  # noqa: E402
-import numpy as np  # noqa: E402
-from ultralytics import YOLO  # noqa: E402
+import cv2
+import numpy as np
+from ultralytics import YOLO
 
-from src.constants import CLASS_NAMES  # noqa: E402
-from src.inference.onnx_predictor import ONNXDefectPredictor  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.constants import CLASS_NAMES
+from src.inference.onnx_predictor import ONNXDefectPredictor
+from src.utils import paths
 
 ONNX_PATH = str(paths.ONNX_PATH)
 PT_PATH = str(paths.BEST_PT)
@@ -87,8 +87,11 @@ def main():
                 used.add(best)
                 matched += 1
                 od = onnx_dets[best]
+                # strict=True：两侧 xyxy 都应恰好 4 个值，长度不等说明某一侧
+                # 后处理出错，此时宁可报错也不要静默截断成"看起来一致"。
                 max_box_diff = max(max_box_diff,
-                                   max(abs(a - b_) for a, b_ in zip(pd["xyxy"], od["xyxy"])))
+                                   max(abs(a - b_) for a, b_ in
+                                       zip(pd["xyxy"], od["xyxy"], strict=True)))
                 max_conf_diff = max(max_conf_diff, abs(pd["conf"] - od["conf"]))
 
         print(f"  {name:<28} ultralytics={len(pt_dets):<3} onnx={len(onnx_dets):<3}")

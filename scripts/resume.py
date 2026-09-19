@@ -19,7 +19,7 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from ultralytics import YOLO  # noqa: E402
+from ultralytics import YOLO
 
 
 def main():

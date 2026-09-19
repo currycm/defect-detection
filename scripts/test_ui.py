@@ -14,10 +14,10 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-import cv2  # noqa: E402
-import numpy as np  # noqa: E402
+import cv2
+import numpy as np
 
-from src.ui.app import CLASS_NAMES, predict  # noqa: E402
+from src.ui.app import CLASS_NAMES, predict
 
 TEST_DIR = os.path.join(PROJECT, "data", "processed", "images", "test")
 

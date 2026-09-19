@@ -18,8 +18,8 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.training.train import train  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.training.train import train
+from src.utils import paths
 
 
 def main() -> int:
@@ -44,6 +44,7 @@ def main() -> int:
         imgsz=args.imgsz,
         name=args.name,
     )
+    # 训练内部已经 LOG.info 完成目录；这里只 echo 给 CLI 用户看
     print("权重目录:", save_dir)
     return 0
 

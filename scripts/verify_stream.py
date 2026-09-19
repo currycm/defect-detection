@@ -17,12 +17,12 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-import cv2  # noqa: E402
+import cv2
 
-from src.constants import CLASS_NAMES  # noqa: E402
-from src.inference.onnx_predictor import ONNXDefectPredictor  # noqa: E402
-from src.inference.stream import StreamDetector, SyntheticSource  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.constants import CLASS_NAMES
+from src.inference.onnx_predictor import ONNXDefectPredictor
+from src.inference.stream import StreamDetector, SyntheticSource
+from src.utils import paths
 
 ONNX_PATH = str(paths.ONNX_PATH)
 TEST_DIR = str(paths.PROCESSED_DIR / "images" / "test")

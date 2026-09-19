@@ -20,12 +20,12 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-import numpy as np  # noqa: E402
-import cv2  # noqa: E402
-import httpx  # noqa: E402
-import uvicorn  # noqa: E402
+import cv2
+import httpx
+import numpy as np
+import uvicorn
 
-from src.inference import api as api_mod  # noqa: E402
+from src.inference import api as api_mod
 
 PORT = 8123
 BASE = f"http://127.0.0.1:{PORT}"

@@ -154,7 +154,7 @@ def _draw(img: np.ndarray, gts, preds, matches, names) -> np.ndarray:
     for gi, pi, _ in matches:
         matched_p[pi] = gi
 
-    for gi, g in enumerate(gts):
+    for g in gts:
         x1, y1, x2, y2 = map(int, g["xyxy"])
         cv2.rectangle(out, (x1, y1), (x2, y2), C_GT, 2)
         cv2.putText(out, f"GT {names[g['cls']]}", (x1, max(y1 - 5, 12)),
@@ -248,9 +248,9 @@ def export_error_cases(weights: str, data_root: str, split: str = "val",
     labels = [names[i] for i in range(n_cls)] + ["background"]
     with open(out_dir / "confusion.csv", "w", newline="", encoding="utf-8-sig") as f:
         wcsv = csv.writer(f)
-        wcsv.writerow(["GT\\Pred"] + labels)
+        wcsv.writerow(["GT\\Pred", *labels])
         for i, row in enumerate(conf_mat):
-            wcsv.writerow([labels[i]] + list(map(int, row)))
+            wcsv.writerow([labels[i], *map(int, row)])
 
     # ---- 重点类错误可视化 ----
     focus_ids = {i for i, n in names.items() if n in focus}
@@ -264,9 +264,10 @@ def export_error_cases(weights: str, data_root: str, split: str = "val",
             # 迭代的 cid，一旦这个函数被存起来延后调用，全部结果都会算错。
             n = 0
             for gi, pi, _ in r["matches"]:
-                if r["gts"][gi]["cls"] == cid or r["preds"][pi]["cls"] == cid:
-                    if r["gts"][gi]["cls"] != r["preds"][pi]["cls"]:
-                        n += 1
+                gt_cls, pred_cls = r["gts"][gi]["cls"], r["preds"][pi]["cls"]
+                # 涉及该类的「框匹配上但类别认错」才算混淆
+                if cid in (gt_cls, pred_cls) and gt_cls != pred_cls:
+                    n += 1
             n += sum(1 for c in r["fn_classes"] if c == cid)
             n += sum(1 for c in r["fp_classes"] if c == cid)
             return n

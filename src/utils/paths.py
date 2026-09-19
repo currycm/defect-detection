@@ -26,6 +26,9 @@ def _candidates():
     env = os.environ.get(ENV_VAR)
     if env:
         yield Path(env).expanduser()
+    # 不用 contextlib.suppress：这里是生成器，yield 位于 try 块内，
+    # 换成 with 会改变生成器的求值时机语义，收益不足以承担该风险。
+    # （ruff.toml 对本文件放行 SIM105，理由同此。）
     try:
         # src/utils/paths.py -> src/utils -> src -> 项目根
         yield Path(__file__).resolve().parents[2]

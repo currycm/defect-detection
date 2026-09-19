@@ -11,7 +11,7 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.evaluation.error_analysis import export_error_cases  # noqa: E402
+from src.evaluation.error_analysis import export_error_cases
 
 if __name__ == "__main__":
     export_error_cases(

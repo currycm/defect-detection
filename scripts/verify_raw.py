@@ -6,7 +6,7 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.utils import paths  # noqa: E402
+from src.utils import paths
 
 BASE = paths.RAW_DIR / "NEU-DET"
 

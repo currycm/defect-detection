@@ -19,8 +19,8 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from src.evaluation.metrics import evaluate, format_report  # noqa: E402
-from src.utils import paths  # noqa: E402
+from src.evaluation.metrics import evaluate, format_report
+from src.utils import paths
 
 
 def main() -> int:

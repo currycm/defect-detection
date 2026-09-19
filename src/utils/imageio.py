@@ -13,8 +13,8 @@ Windows 中文路径：`cv2.imread` / `cv2.imwrite` / `np.tofile` 对含非 ASCI
 from __future__ import annotations
 
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 import cv2
 import numpy as np
@@ -72,14 +72,19 @@ def draw_detections(frame_bgr: np.ndarray, dets: Sequence[dict],
     - 标签底色按实测文字宽高绘制，并对 x/y 做**边界钳制**，
       避免靠右/靠上的框标签溢出或裁切（旧 draw_boxes 就缺这一步）；
     - 需要中文标注请用界面层的 PIL 版本（帧率要求低、可读性优先）。
+    - 性能：无检测时直接返回原帧不拷贝（流式「无缺陷」帧占多数，省一次 200x200
+      全帧拷贝）。安全前提：调用方 latest() 仅在锁内取引用、锁外做 encode_jpeg，
+      而 source.read() 每次返回新 ndarray，旧帧内存不会被下一轮覆盖。
     """
+    if not dets:
+        return frame_bgr
     out = frame_bgr.copy()
-    h, w = out.shape[:2]
+    _, w = out.shape[:2]
     for d in dets:
         xyxy = d.get("xyxy")
         if xyxy is None:
             continue
-        x1, y1, x2, y2 = (int(round(float(v))) for v in xyxy)
+        x1, y1, x2, y2 = (round(float(v)) for v in xyxy)
         cls = int(d.get("cls", -1))
         color = CLASS_COLORS.get(cls, _DEFAULT_COLOR)
 

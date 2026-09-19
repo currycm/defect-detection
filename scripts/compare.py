@@ -14,9 +14,9 @@ from _bootstrap import ensure_project_root
 
 PROJECT = ensure_project_root()
 
-from ultralytics import YOLO  # noqa: E402
+from ultralytics import YOLO
 
-from src.utils import paths  # noqa: E402
+from src.utils import paths
 
 # 经 paths 绝对化：ultralytics 解析相对 `path` 时以 cwd 为准，不可依赖
 DATA_YAML = str(paths.runtime_data_yaml())
