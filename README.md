@@ -98,27 +98,65 @@ python scripts/demo.py                    # http://127.0.0.1:7860
 
 ## 推理服务接口
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/` | 极简可视化页（`<img src="/stream">` 直接看实时画面） |
-| GET | `/health` | 服务与模型状态（后端 provider、输入尺寸、类别表） |
-| POST | `/detect` | 上传图片检测；query 可覆盖 `conf` / `iou` |
-| GET | `/stream` | MJPEG 实时推流（连接即启动，断开自动释放） |
-| GET | `/stream/state` | 轮询最新稳定状态 |
-| POST | `/stream/stop` | 显式停止当前推流 |
+| 方法 | 路径 | 鉴权 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/` | 否 | 极简可视化页（`<img src="/stream">` 直接看实时画面） |
+| GET | `/health` | 否 | 服务与模型状态（后端 provider、输入尺寸、类别表、降级/鉴权状态） |
+| POST | `/detect` | 是 | 上传图片检测；query 可覆盖 `conf` / `iou` |
+| GET | `/stream` | 是 | MJPEG 实时推流（连接即启动，断开自动释放） |
+| GET | `/stream/state` | 是 | 轮询最新稳定状态 |
+| POST | `/stream/stop` | 是 | 显式停止当前推流 |
 
 ```bash
 curl http://127.0.0.1:8000/health
-curl -X POST "http://127.0.0.1:8000/detect?conf=0.25&iou=0.5" -F file=@data/processed/images/test/crazing_1.jpg
+curl -X POST "http://127.0.0.1:8000/detect?conf=0.25&iou=0.5" -F file=@data/processed/images/test/crazing_241.jpg
 
 # 用 test 集图片做合成流（无摄像头也能验证推流）
 # /stream?source=synthetic:<目录> ；本地路径限制在 ALLOWED_SOURCE_ROOTS 内
+
+# 配了密钥时，受保护接口要带请求头
+curl -H "X-API-Key: $DEFECT_API_KEY" http://127.0.0.1:8000/stream/state
 ```
+
+### 接口鉴权
+
+设 `DEFECT_API_KEY` 即启用；未设置时接口开放（本地开发/演示不受影响），
+但 `/health` 会报告 `auth_enabled: false`，方便监控发现「上线忘配密钥」这一高危疏漏。
+
+```bash
+export DEFECT_API_KEY="$(python -c 'import secrets;print(secrets.token_urlsafe(32))')"
+```
+
+- `/health` 与 `/` **刻意免鉴权**：监控探活与降级诊断依赖它们，且降级时更要能读到。
+- 其余接口需带 `X-API-Key: <key>` 或 `Authorization: Bearer <key>`，不匹配返回 401。
+- 密钥每次请求读取环境变量，**改了不用重启服务**。
+- 比较用 `secrets.compare_digest`（常数时间），避免时序侧信道。
 
 **安全边界**：`/stream?source=` 的本地路径被限制在 `utils.paths.ALLOWED_SOURCE_ROOTS`
 （默认项目目录）内，防止任意文件读取；需要放行别的目录时设
 `DEFECT_ALLOWED_SOURCE_ROOTS`（多个用 `os.pathsep` 分隔）。
-RTSP/HTTP/RTMP 网络流默认放行（摄像头接入是既定用法），部署在不可信网络请自行收紧或加鉴权。
+RTSP/HTTP/RTMP 网络流默认放行（摄像头接入是既定用法）。
+鉴权与路径白名单是**两层独立防御**：前者挡未授权调用方，后者挡已授权调用方越界读本机文件。
+
+### 可运维性（日志 / 追溯 / 自恢复）
+
+| 能力 | 行为 | 配置 |
+| --- | --- | --- |
+| 日志落盘 | 控制台 + `logs/defect.log`（按大小滚动，默认 32MB×10） | `DEFECT_LOG_DIR`（默认 `<项目根>/logs`） |
+| 保留期清理 | 服务启动时清理超期文件，**只清本模块管理的文件** | 默认 30 天 |
+| 判定追溯 | 每条判定一行 JSON 写入 `logs/decisions.jsonl`（含时间戳/来源/阈值/耗时/逐框结果） | 同上 |
+| 异常自恢复 | 模型缺失/损坏时**服务照常启动**并置降级态，后台线程指数退避重试，文件恢复后自动接管 | `DEFECT_ONNX_THREADS` |
+
+- `/health` 暴露 `degraded` / `reload_failures` / `next_reload_in_s` / `auth_enabled`，
+  监控可直接消费，不必解析 `status` 字符串。
+- 降级态下 `/detect` 与 `/stream` 返回 **503**（服务可用、模型不可用），而非 500 或崩溃。
+- 显式关闭落盘：`DEFECT_LOG_DISABLE=1`（跑单测时自动关闭，避免污染仓库）。
+
+```bash
+python scripts/verify_recovery.py    # 故障演练：模型缺失 -> 降级 -> 恢复，17 项断言
+python scripts/verify_auth.py        # 鉴权端到端（真实 uvicorn + socket）
+```
+
 
 ## 数据集
 
@@ -173,7 +211,14 @@ python scripts/test_stream_api.py            # /stream 系列（真实 uvicorn +
 python scripts/test_ui.py                    # Gradio 推理/绘图逻辑（无头）
 python scripts/verify_onnx.py                # ONNX 与 PyTorch 结果一致性
 python scripts/verify_stream.py              # 限频 / 去抖 / 生命周期断言
+python scripts/verify_recovery.py            # 异常自恢复故障演练（隔离项目根）
+python scripts/verify_auth.py                # 鉴权端到端
+python scripts/bench_deploy.py               # 逐段性能基准（--threads-sweep / --soak-minutes）
 ```
+
+> 注：`test_api.py` / `test_stream_api.py` / `test_ui.py` 放在 `scripts/` 而非 `tests/`，
+> 因为它们需要先起服务或会联网；`pytest.ini` 的 `testpaths = tests` 把它们与单测隔开
+> （同名文件会导致 pytest 收集冲突）。
 
 ## Docker
 
