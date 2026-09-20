@@ -402,7 +402,14 @@ def test_health_exposes_degraded_fields(monkeypatch):
 
 
 def test_health_ok_state_is_not_degraded(monkeypatch):
-    """恢复后 degraded 必须回到 False，否则告警永远挂着（狼来了）。"""
+    """恢复后 degraded 必须回到 False，否则告警永远挂着（狼来了）。
+
+    注意：**必须把 _init_backend / prune_old_logs 一起打桩**。
+    TestClient 进入上下文会触发 lifespan，而 lifespan 会调用**真实的**
+    _init_backend()；它一旦执行就会重设 _backend（CI 上无权重 -> None），
+    把前面 monkeypatch 的 _backend 覆盖掉，断言便随「本机有没有权重」而变。
+    只打桩 _backend 的写法在开发机（有权重）会假通过，在 CI 上必然失败。
+    """
     pytest.importorskip("fastapi")
     pytest.importorskip("httpx")
     from fastapi.testclient import TestClient
@@ -413,6 +420,9 @@ def test_health_ok_state_is_not_degraded(monkeypatch):
     monkeypatch.setattr(api, "_backend_info", {"backend": "onnxruntime"}, raising=False)
     monkeypatch.setattr(api, "_reload_failures", 0, raising=False)
     monkeypatch.setattr(api, "_next_reload_at", 0.0, raising=False)
+    # 阻止 lifespan 覆盖上面的状态（关键，见 docstring）
+    monkeypatch.setattr(api, "_init_backend", lambda: True)
+    monkeypatch.setattr(api, "prune_old_logs", lambda *a, **k: 0)
 
     with TestClient(api.app) as c:
         b = c.get("/health").json()
