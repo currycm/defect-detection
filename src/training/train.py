@@ -65,7 +65,9 @@ def train(data_yaml: str | os.PathLike | None = None,
           epochs: int = 100, imgsz: int = 640,
           batch: int = 16,
           project: str | os.PathLike | None = None,
-          name: str = "exp") -> str:
+          name: str = "exp",
+          workers: int | None = None,
+          device: str | int | None = None) -> str:
     """启动 YOLOv8 训练，返回权重保存目录。
 
     路径参数默认取 src.utils.paths 的唯一真源（绝对路径），避免「相对路径在
@@ -83,11 +85,16 @@ def train(data_yaml: str | os.PathLike | None = None,
 
     m = YOLO(model)
     hyp = _load_hyp(hyp_yaml)
-    results = m.train(
+    train_kwargs = dict(
         data=data_yaml, epochs=epochs,
         imgsz=imgsz, batch=batch, project=project, name=name,
         **hyp,
     )
+    if workers is not None:
+        train_kwargs["workers"] = workers
+    if device is not None:
+        train_kwargs["device"] = device
+    results = m.train(**train_kwargs)
     save_dir = str(results.save_dir)
     LOG.info("训练完成，权重目录: %s", save_dir)
     return save_dir

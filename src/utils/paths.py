@@ -66,10 +66,10 @@ LOGS_DIR: Path = PROJECT_ROOT / "logs"
 DATA_YAML: Path = CONFIGS_DIR / "data.yaml"
 HYP_YAML: Path = CONFIGS_DIR / "hyp.yaml"
 ONNX_PATH: Path = WEIGHTS_DIR / "best.onnx"
-PRETRAINED_PT: Path = PROJECT_ROOT / "yolov8n.pt"
+PRETRAINED_PT: Path = PROJECT_ROOT / "yolo26n.pt"
 
-# 训练产物权重（Step 5 消融最优）
-BEST_PT: Path = RUNS_DIR / "detect" / "runs" / "exp_aug640" / "weights" / "best.pt"
+# 训练产物权重（当前部署：YOLO26n，run exp_yolo26）
+BEST_PT: Path = RUNS_DIR / "exp_yolo26" / "weights" / "best.pt"
 
 # 允许通过 /stream?source= 访问的本地路径根目录（安全边界，见 api._resolve_source）
 ALLOWED_SOURCE_ROOTS: tuple[Path, ...] = (PROJECT_ROOT,)

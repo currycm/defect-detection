@@ -1,4 +1,4 @@
-# 工业缺陷检测系统（YOLOv8 + ONNXRuntime）
+# 工业缺陷检测系统（YOLO26 + ONNXRuntime）
 
 基于 **NEU-DET** 钢材表面缺陷数据集的端到端缺陷检测系统：
 **数据转换 → 弱类增强 → 训练 → 导出 ONNX → FastAPI 推理服务（含实时 MJPEG 推流）→ Gradio 演示**。
@@ -11,7 +11,7 @@ NEU-DET(Pascal VOC XML)
    │  src/data/split.py        切 train/val/test
    │  src/data/augment.py      弱类定向离线增强
    ▼
-YOLOv8n 训练 ──► runs/detect/runs/<exp>/weights/best.pt
+YOLO26n 训练 ──► runs/exp_yolo26/weights/best.pt
    │  scripts/export.py        固定尺寸导出
    ▼
 weights/best.onnx
@@ -58,25 +58,27 @@ defect-detection/
 conda create -n defect python=3.11 && conda activate defect
 pip install -r requirements.txt
 
-# 0. 预训练初始权重 yolov8n.pt（6.2MB，同样不入库）
-#    scripts/train.py 的 --weights 默认值是 <项目根>/yolov8n.pt。
-#    缺它时 ultralytics 会去 GitHub 下载，而国内网络常失败（SSL 吊销检查超时），
-#    建议先手动放到项目根目录：
-#      curl -L -o yolov8n.pt https://hf-mirror.com/ultralytics/yolov8n/resolve/main/yolov8n.pt
+# 0. 预训练初始权重 yolo26n.pt（约 5.3MB，同样不入库）
+#    scripts/train.py 的 --weights 默认值是 <项目根>/yolo26n.pt。
+#    ultralytics 8.4.154 已原生支持 YOLO26（包内含 cfg/models/26/yolo26.yaml，
+#    reg_max=1 即移除 DFL、框直接为 cx,cy,w,h），无需升级库、不破坏既有 CI。
+#    缺权重时 ultralytics 会去 GitHub releases 下载；国内网络常失败（SSL 吊销检查超时），
+#    建议先手动放到项目根目录（已验证可用的直链）：
+#      curl -L -o yolo26n.pt https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt
 
 # 1. 数据准备：先把 NEU-DET 解压到 data/raw/NEU-DET/，再执行
 python scripts/prepare_data.py            # 转换 + 切分 train/val/test
 python scripts/augment.py                 # 可选：弱类定向离线增强
 
-# 2. 训练（产物落在 runs/detect/runs/<name>/weights/best.pt）
-python scripts/train.py --name exp
+# 2. 训练（产物落在 runs/<name>/weights/best.pt；当前部署权重来自 runs/exp_yolo26）
+python scripts/train.py --name exp_yolo26 --epochs 100 --batch 16 --workers 4 --device 0
 
 # 3. 评估（默认在独立 test 集上评估 paths.BEST_PT）
 python scripts/evaluate.py
-python scripts/evaluate.py --weights runs/detect/runs/exp/weights/best.pt --split test
+python scripts/evaluate.py --weights runs/exp_yolo26/weights/best.pt --split test
 
 # 4. 导出 ONNX 到 weights/best.onnx
-python scripts/export.py --weights runs/detect/runs/exp/weights/best.pt
+python scripts/export.py --weights runs/exp_yolo26/weights/best.pt
 
 # 5. 启动推理服务（默认只绑 127.0.0.1）
 python scripts/serve.py
@@ -172,11 +174,19 @@ PyTorch 两条链路结果一致（`python scripts/verify_onnx.py` 校验）：
 
 | 指标 | 值 |
 | --- | --- |
-| mAP@0.5 | 0.787 |
-| mAP@0.5:0.95 | 0.410 |
-| Precision / Recall（conf=0.25 工作点） | 0.858 / 0.592 |
+| mAP@0.5（独立 test 集） | 0.776 |
+| mAP@0.5:0.95（独立 test 集） | 0.410 |
+| Precision / Recall（YOLO val 默认工作点） | 0.664 / 0.737 |
 
 数值以 `python scripts/evaluate.py` 的实际输出为准（会打印整体 + 逐类表）。
+
+**模型升级说明（YOLOv8n → YOLO26n，2026-09-24）**：在完全相同的超参 / 数据 / imgsz=640 / 100 epochs 下，
+YOLO26n 与上一版 YOLOv8n 在独立 test 集上**基本持平**（mAP@0.5 0.786 → 0.776，差 ~1 点，在训练随机性范围内），
+符合 NEU-DET 上 YOLOv8n 已饱和的判断。升级价值在于**架构先进性而非精度提升**：
+YOLO26n 参数量与算力更低（2.5M / 5.3 GFLOPs vs 3.0M / 8.1 GFLOPs），导出 ONNX 更小（9.3MB vs 12.2MB），
+且 `reg_max=1` 使自写 ONNXRuntime 解码器零改动即可对齐（`python scripts/verify_onnx.py` 一致率 1.000、坐标差 <0.05px）。
+注意 YOLO26n 的置信度分布与 YOLOv8n 不同：precision 偏低（0.664 vs 0.777）、recall 略升（0.737 vs 0.724），
+如需压低 FP 可用 Step6b 的 NMS iou 阈值杠杆进一步调优。
 
 **已知短板（如实记录）**：
 

@@ -28,6 +28,10 @@ def main() -> int:
     ap.add_argument("--name", default="exp", help="实验名（决定 runs/detect/runs/<name>）")
     ap.add_argument("--epochs", type=int, default=100)
     ap.add_argument("--batch", type=int, default=16)
+    ap.add_argument("--workers", type=int, default=4,
+                    help="dataloader 进程数（本机内存有限，640 输入建议 2~4）")
+    ap.add_argument("--device", default=None,
+                    help="训练设备，0=GPU0，cpu=CPU，默认 auto（有 CUDA 则用 GPU）")
     ap.add_argument("--weights", default=str(paths.PRETRAINED_PT),
                     help="初始权重（默认: %(default)s）")
     ap.add_argument("--data", default=str(paths.DATA_YAML))
@@ -43,6 +47,8 @@ def main() -> int:
         batch=args.batch,
         imgsz=args.imgsz,
         name=args.name,
+        workers=args.workers,
+        device=args.device,
     )
     # 训练内部已经 LOG.info 完成目录；这里只 echo 给 CLI 用户看
     print("权重目录:", save_dir)

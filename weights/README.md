@@ -4,8 +4,8 @@
 
 | 文件 | 大小 | 来源 |
 | --- | --- | --- |
-| `best.onnx` | ~11.7 MB | `python scripts/export.py` 导出，服务端主链路 |
-| `best.pt` | ~6 MB | 训练产出，默认不出现在这里，在 `runs/detect/runs/<exp>/weights/` |
+| `best.onnx` | ~9.3 MB | `python scripts/export.py` 导出，服务端主链路（当前为 YOLO26n） |
+| `best.pt` | ~5.2 MB | 训练产出，默认不出现在这里，在 `runs/exp_yolo26/weights/` |
 
 ## 为什么权重不入库
 
@@ -18,12 +18,12 @@
 # 1. 准备数据：把 NEU-DET 解压到 data/raw/NEU-DET/
 python scripts/prepare_data.py
 
-# 2. 训练（默认 imgsz=640，产物落在 runs/detect/runs/exp/weights/best.pt）
-python scripts/train.py --name exp
+# 2. 训练（默认 imgsz=640，产物落在 runs/<name>/weights/best.pt）
+python scripts/train.py --name exp_yolo26
 
 # 3. 导出 ONNX 到本目录
-python scripts/export.py                    # 默认取 runs/detect/runs/exp_aug640/.../best.pt
-python scripts/export.py --weights runs/detect/runs/exp/weights/best.pt
+python scripts/export.py                    # 默认取 runs/exp_yolo26/.../best.pt
+python scripts/export.py --weights runs/exp_yolo26/weights/best.pt
 ```
 
 在此之前，`/health` 会返回 `status: model_missing`，`/detect` 返回 503 —— 这是
